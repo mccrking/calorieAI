@@ -1,8 +1,8 @@
 'use client'
 
-import { useEffect, useCallback } from 'react'
+import { useEffect } from 'react'
 import { AnimatePresence, motion } from 'framer-motion'
-import { Leaf, Bell, BellOff } from 'lucide-react'
+import { Leaf } from 'lucide-react'
 import { useCalorieStore } from '@/store/calorie-store'
 import { useToast } from '@/hooks/use-toast'
 import { DashboardView } from '@/components/app/dashboard-view'
@@ -33,8 +33,8 @@ export default function HomePage() {
         const [eData, gData, bData, wData] = await Promise.all([entriesRes.json(), goalsRes.json(), badgesRes.json(), waterRes.json()])
         if (eData.success) setEntries(eData.data)
         if (gData.success) setGoals({ date: gData.data.date, calorieTarget: gData.data.calorieTarget, proteinTarget: gData.data.proteinTarget, carbTarget: gData.data.carbTarget, fatTarget: gData.data.fatTarget })
-        if (bData.success) setBadges(bData.data)
-        if (wData.success) setWater({ totalGlasses: wData.data.totalGlasses || 0, goalGlasses: water.goalGlasses })
+        if (bData.success) setBadges(bData.data.badges || bData.data)
+        if (wData.success) setWater({ totalGlasses: wData.data.glassCount ?? wData.data.totalGlasses ?? 0, goalGlasses: water.goalGlasses })
       } catch { /* silent */ }
     }
     load()
@@ -57,13 +57,6 @@ export default function HomePage() {
     const t = setTimeout(check, 5000)
     return () => clearTimeout(t)
   }, [entries, lastReminder, setLastReminder, toast])
-
-  // Request notification permission
-  useEffect(() => {
-    if (typeof window !== 'undefined' && 'Notification' in window && Notification.permission === 'default') {
-      Notification.requestPermission()
-    }
-  }, [])
 
   const handleDelete = async (id: string) => {
     try {
