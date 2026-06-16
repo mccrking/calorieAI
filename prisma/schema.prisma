@@ -34,3 +34,40 @@ model DailyGoal {
   createdAt      DateTime @default(now())
   updatedAt      DateTime @updatedAt
 }
+
+model UserProfile {
+  id        String  @id @default(cuid())
+  name      String  @default("User")
+  age       Int     @default(25)
+  weight    Float   @default(70)
+  height    Float   @default(170)
+  gender    String  @default("male")
+  activity  String  @default("moderate")
+  bmr       Float   @default(0)
+  tdee      Float   @default(0)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model WaterLog {
+  id        String   @id @default(cuid())
+  amount    Int
+  date      String
+  createdAt DateTime @default(now())
+}
+
+model Badge {
+  id          String   @id @default(cuid())
+  key         String   @unique
+  name        String
+  description String
+  icon        String
+  unlockedAt  DateTime?
+}
+
+model ChatMessage {
+  id        String   @id @default(cuid())
+  role      String
+  content   String
+  createdAt DateTime @default(now())
+}

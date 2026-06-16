@@ -6,7 +6,11 @@ const nextConfig: NextConfig = {
     ignoreBuildErrors: true,
   },
   reactStrictMode: false,
-  allowedDevOrigins: ['http://21.0.22.3:81', 'http://21.0.22.3:3000'],
+  allowedDevOrigins: [
+    'http://21.0.22.3:81',
+    'http://21.0.22.3:3000',
+    'https://preview-chat-3b0a247e-c682-48d6-8b60-11852c9ef93d.space-z.ai',
+  ],
 };
 
 export default nextConfig;
