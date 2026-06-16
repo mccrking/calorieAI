@@ -22,3 +22,27 @@ Stage Summary:
 - Fixed 2 critical bugs (badges data mapping, water data mapping)
 - All API routes confirmed working: entries, goals, stats, analytics, water, badges, barcode, chat, meal-plan, profile, analyze-text, analyze-image
 - All 7 views render correctly with real data
+
+---
+Task ID: 2
+Agent: Main Agent
+Task: Transform CalorieAI into a PWA (Progressive Web App)
+
+Work Log:
+- Generated AI app icon (green leaf, app store style) using z-ai image generation
+- Created /public/manifest.json with standalone display, green theme, 5 icon sizes
+- Created /public/sw.js service worker with network-first for API, cache-first for static assets
+- Created /src/hooks/use-pwa.tsx with service worker registration, install prompt component, offline detection
+- Updated /src/app/layout.tsx with PWA meta tags (manifest link, apple-touch-icon, apple-mobile-web-app-capable, theme-color)
+- Added PWAInstallPrompt component to layout (shows "Install CalorieAI" banner)
+- Fixed JSX parsing error (renamed .ts → .tsx for use-pwa hook)
+- Fixed React lint error (moved setState calls out of useEffect body)
+- Verified: manifest ✅, service worker ✅, icon ✅, apple meta tags ✅, theme color ✅, lint 0 errors ✅
+
+Stage Summary:
+- CalorieAI is now a fully installable PWA
+- On Android: "Add to Home Screen" → standalone app with icon, no browser chrome
+- On iOS (Safari): "Add to Home Screen" → standalone app
+- Service worker caches static assets and API responses for offline use
+- Install prompt banner appears automatically on supported browsers
+- All existing features remain fully functional
