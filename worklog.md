@@ -70,3 +70,29 @@ Stage Summary:
 - Files created: src/lib/supabase.ts, src/lib/database.ts, supabase/migration.sql, .env.example, src/app/api/db-mode/route.ts
 - Files modified: 9 API routes, settings-view.tsx
 - To switch to Supabase: run migration.sql in Supabase SQL Editor, add env vars, restart app
+
+---
+Task ID: 9
+Agent: Main Agent
+Task: Integrate OpenAI with dual-mode AI abstraction layer
+
+Work Log:
+- Installed openai@6.42.0
+- Created src/lib/openai-client.ts - OpenAI client with auto-detection, configurable models
+- Created src/lib/ai.ts - AI abstraction layer with 4 functions: analyzeFoodText, analyzeFoodImage, chatCompletion, generateMealPlan
+- Updated 4 API routes to use abstraction: analyze-text, analyze-image, chat, meal-plan
+- Updated /api/db-mode to expose both database and AI provider info
+- Updated settings-view.tsx to show Database + AI Engine status indicators
+- Updated .env.example with OpenAI configuration guide
+- Ran lint: 0 errors
+- Verified /api/db-mode returns both modes correctly
+- Verified /api/analyze-text works through abstraction layer (z-ai-sdk fallback)
+- Browser verified: both "Database: SQLite (Local)" and "AI Engine: Built-in AI (z-ai-sdk)" indicators visible in Settings
+- Browser verified: end-to-end food tracking "1 banana" → AI analysis → meal type selector (no errors)
+
+Stage Summary:
+- Architecture: Dual-mode AI - OPENAI_API_KEY triggers OpenAI (gpt-4o-mini with JSON mode), otherwise falls back to z-ai-web-dev-sdk
+- OpenAI advantages: response_format:json_object for reliable JSON, max_tokens control, gpt-4o-mini vision support
+- Files created: src/lib/openai-client.ts, src/lib/ai.ts
+- Files modified: analyze-text/route.ts, analyze-image/route.ts, chat/route.ts, meal-plan/route.ts, db-mode/route.ts, settings-view.tsx, .env.example
+- To switch to OpenAI: add OPENAI_API_KEY=sk-... to .env, restart app

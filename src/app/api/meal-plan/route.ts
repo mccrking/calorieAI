@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import ZAI from 'z-ai-web-dev-sdk'
+import { generateMealPlan } from '@/lib/ai'
 
 export async function POST(request: NextRequest) {
   try {
@@ -14,8 +14,6 @@ export async function POST(request: NextRequest) {
     }
 
     const numDays = Math.min(Math.max(Number(days) || 7, 1), 14)
-
-    const zai = await ZAI.create()
 
     const systemPrompt = `You are an expert nutritionist and meal planner. Your job is to create personalized weekly meal plans with exact macronutrient calculations.
 
@@ -98,34 +96,7 @@ Rules:
 
 Generate the complete meal plan.`
 
-    const response = await zai.chat.completions.create({
-      messages: [
-        { role: 'assistant', content: systemPrompt },
-        { role: 'user', content: userMessage },
-      ],
-      thinking: { type: 'disabled' },
-    })
-
-    const content = response.choices[0]?.message?.content
-    if (!content) {
-      return NextResponse.json(
-        { success: false, error: 'No response from AI' },
-        { status: 500 }
-      )
-    }
-
-    // Clean response - remove markdown code blocks
-    const cleaned = content.replace(/```json\n?/g, '').replace(/```\n?/g, '').trim()
-
-    let result
-    try {
-      result = JSON.parse(cleaned)
-    } catch {
-      return NextResponse.json(
-        { success: false, error: 'Failed to parse AI response', raw: content },
-        { status: 500 }
-      )
-    }
+    const result = await generateMealPlan(systemPrompt, userMessage)
 
     return NextResponse.json({ success: true, data: result })
   } catch (error: unknown) {

@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import { motion } from 'framer-motion'
-import { Settings, Target, Save, Loader2, RotateCcw, Database } from 'lucide-react'
+import { Settings, Target, Save, Loader2, RotateCcw, Database, Sparkles } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Card, CardContent } from '@/components/ui/card'
@@ -24,6 +24,7 @@ export function SettingsView() {
   const [saving, setSaving] = useState(false)
   const [localGoals, setLocalGoals] = useState({ ...goals })
   const [dbMode, setDbMode] = useState<string>('')
+  const [aiMode, setAiMode] = useState<string>('')
 
   useEffect(() => {
     setLocalGoals({ ...goals })
@@ -32,7 +33,12 @@ export function SettingsView() {
   useEffect(() => {
     fetch('/api/db-mode')
       .then((r) => r.json())
-      .then((d) => { if (d.success) setDbMode(d.data.label) })
+      .then((d) => {
+        if (d.success) {
+          setDbMode(d.data.database.label)
+          setAiMode(d.data.ai.label)
+        }
+      })
       .catch(() => {})
   }, [])
 
@@ -231,12 +237,23 @@ export function SettingsView() {
         </Button>
       </div>
 
-      {/* Database Mode */}
-      {dbMode && (
-        <div className="flex items-center gap-2 px-3 py-2 rounded-lg bg-muted/50 border border-border/30">
-          <Database className="w-3.5 h-3.5 text-primary" />
-          <span className="text-[11px] text-muted-foreground">Database:</span>
-          <span className={`text-[11px] font-semibold ${dbMode.includes('Supabase') ? 'text-emerald-600' : 'text-amber-600'}`}>{dbMode}</span>
+      {/* Backend Status */}
+      {(dbMode || aiMode) && (
+        <div className="space-y-1.5">
+          {dbMode && (
+            <div className="flex items-center gap-2 px-3 py-2 rounded-lg bg-muted/50 border border-border/30">
+              <Database className="w-3.5 h-3.5 text-primary" />
+              <span className="text-[11px] text-muted-foreground">Database:</span>
+              <span className={`text-[11px] font-semibold ${dbMode.includes('Supabase') ? 'text-emerald-600' : 'text-amber-600'}`}>{dbMode}</span>
+            </div>
+          )}
+          {aiMode && (
+            <div className="flex items-center gap-2 px-3 py-2 rounded-lg bg-muted/50 border border-border/30">
+              <Sparkles className="w-3.5 h-3.5 text-primary" />
+              <span className="text-[11px] text-muted-foreground">AI Engine:</span>
+              <span className={`text-[11px] font-semibold ${aiMode.includes('OpenAI') ? 'text-emerald-600' : 'text-amber-600'}`}>{aiMode}</span>
+            </div>
+          )}
         </div>
       )}
 

@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import ZAI from 'z-ai-web-dev-sdk'
+import { chatCompletion } from '@/lib/ai'
 import {
   getEntriesByDate,
   getGoalByDate,
@@ -61,26 +61,10 @@ Key behaviors:
 
 ${contextInfo}`
 
-    // Build messages array with system prompt prepended
-    const chatMessages: Array<{ role: string; content: string }> = [
-      { role: 'assistant', content: systemPrompt },
-      ...messages.slice(-20), // Keep last 20 messages for context window
-    ]
-
-    const zai = await ZAI.create()
-
-    const response = await zai.chat.completions.create({
-      messages: chatMessages,
-      thinking: { type: 'disabled' },
-    })
-
-    const content = response.choices[0]?.message?.content
-    if (!content) {
-      return NextResponse.json(
-        { success: false, error: 'No response from AI' },
-        { status: 500 }
-      )
-    }
+    const content = await chatCompletion(
+      messages.slice(-20),
+      systemPrompt
+    )
 
     // Save messages to chat history
     const lastUserMsg = messages[messages.length - 1]
