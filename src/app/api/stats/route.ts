@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { db } from '@/lib/db'
+import { getEntriesByDateRange } from '@/lib/database'
 
 export async function GET(request: NextRequest) {
   try {
@@ -15,15 +15,7 @@ export async function GET(request: NextRequest) {
     const startStr = startDate.toISOString().split('T')[0]
     const endStr = endDate.toISOString().split('T')[0]
 
-    const entries = await db.foodEntry.findMany({
-      where: {
-        date: {
-          gte: startStr,
-          lte: endStr,
-        },
-      },
-      orderBy: { date: 'asc' },
-    })
+    const entries = await getEntriesByDateRange(startStr, endStr)
 
     // Group by date
     const dailyStats: Record<string, { calories: number; protein: number; carbs: number; fat: number; count: number }> = {}

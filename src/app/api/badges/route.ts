@@ -1,5 +1,16 @@
 import { NextResponse } from 'next/server'
-import { db } from '@/lib/db'
+import {
+  getBadgeByKey,
+  createBadge,
+  upsertBadge,
+  getAllBadges,
+  getAllEntries,
+  findFirstEntryBySource,
+  findFirstEntryByDate,
+  getGoalByDate,
+  getAllWaterLogs,
+  findFirstWaterLogByDate,
+} from '@/lib/database'
 
 const DEFAULT_BADGES = [
   { key: 'first_scan', name: 'First Scan', description: 'Log food using image recognition', icon: '📷' },
@@ -16,15 +27,13 @@ export async function GET() {
   try {
     // Pre-seed badges if they don't exist
     for (const badgeDef of DEFAULT_BADGES) {
-      const existing = await db.badge.findUnique({ where: { key: badgeDef.key } })
+      const existing = await getBadgeByKey(badgeDef.key)
       if (!existing) {
-        await db.badge.create({
-          data: {
-            key: badgeDef.key,
-            name: badgeDef.name,
-            description: badgeDef.description,
-            icon: badgeDef.icon,
-          },
+        await createBadge({
+          key: badgeDef.key,
+          name: badgeDef.name,
+          description: badgeDef.description,
+          icon: badgeDef.icon,
         })
       }
     }
@@ -32,18 +41,13 @@ export async function GET() {
     // Check badge conditions
 
     // 1. first_scan: any entry with source "image"
-    const hasImageEntry = await db.foodEntry.findFirst({ where: { source: 'image' } })
+    const hasImageEntry = await findFirstEntryBySource('image')
     if (hasImageEntry) {
-      await db.badge.upsert({
-        where: { key: 'first_scan' },
-        update: { unlockedAt: hasImageEntry.createdAt },
-        create: {
-          key: 'first_scan',
-          name: 'First Scan',
-          description: 'Log food using image recognition',
-          icon: '📷',
-          unlockedAt: hasImageEntry.createdAt,
-        },
+      await upsertBadge('first_scan', {
+        name: 'First Scan',
+        description: 'Log food using image recognition',
+        icon: '📷',
+        unlockedAt: hasImageEntry.createdAt,
       })
     }
 
@@ -54,7 +58,7 @@ export async function GET() {
       const d = new Date(today)
       d.setDate(d.getDate() - i)
       const dateStr = d.toISOString().split('T')[0]
-      const dayEntry = await db.foodEntry.findFirst({ where: { date: dateStr } })
+      const dayEntry = await findFirstEntryByDate(dateStr)
       if (dayEntry) {
         currentStreak++
       } else {
@@ -62,41 +66,31 @@ export async function GET() {
       }
     }
     if (currentStreak >= 7) {
-      await db.badge.upsert({
-        where: { key: 'week_streak' },
-        update: { unlockedAt: new Date() },
-        create: {
-          key: 'week_streak',
-          name: 'Week Warrior',
-          description: 'Maintain a 7-day logging streak',
-          icon: '🔥',
-          unlockedAt: new Date(),
-        },
+      await upsertBadge('week_streak', {
+        name: 'Week Warrior',
+        description: 'Maintain a 7-day logging streak',
+        icon: '🔥',
+        unlockedAt: new Date(),
       })
     }
 
     // 3. protein_goal: any day where protein sum >= protein target
-    const allEntries = await db.foodEntry.findMany()
+    const allEntries = await getAllEntries()
     const proteinByDate: Record<string, number> = {}
     for (const entry of allEntries) {
       proteinByDate[entry.date] = (proteinByDate[entry.date] || 0) + entry.protein
     }
     for (const [date, protein] of Object.entries(proteinByDate)) {
-      const goal = await db.dailyGoal.findUnique({ where: { date } })
+      const goal = await getGoalByDate(date)
       const target = goal?.proteinTarget || 150
       if (protein >= target) {
-        const firstEntry = await db.foodEntry.findFirst({ where: { date } })
+        const firstEntry = await findFirstEntryByDate(date)
         if (firstEntry) {
-          await db.badge.upsert({
-            where: { key: 'protein_goal' },
-            update: { unlockedAt: firstEntry.createdAt },
-            create: {
-              key: 'protein_goal',
-              name: 'Protein Pro',
-              description: 'Hit your daily protein target',
-              icon: '💪',
-              unlockedAt: firstEntry.createdAt,
-            },
+          await upsertBadge('protein_goal', {
+            name: 'Protein Pro',
+            description: 'Hit your daily protein target',
+            icon: '💪',
+            unlockedAt: firstEntry.createdAt,
           })
         }
         break
@@ -109,21 +103,16 @@ export async function GET() {
       caloriesByDate[entry.date] = (caloriesByDate[entry.date] || 0) + entry.calories
     }
     for (const [date, calories] of Object.entries(caloriesByDate)) {
-      const goal = await db.dailyGoal.findUnique({ where: { date } })
+      const goal = await getGoalByDate(date)
       const target = goal?.calorieTarget || 2000
       if (Math.abs(calories - target) / target <= 0.1) {
-        const firstEntry = await db.foodEntry.findFirst({ where: { date } })
+        const firstEntry = await findFirstEntryByDate(date)
         if (firstEntry) {
-          await db.badge.upsert({
-            where: { key: 'calorie_goal' },
-            update: { unlockedAt: firstEntry.createdAt },
-            create: {
-              key: 'calorie_goal',
-              name: 'Calorie Captain',
-              description: 'Stay within 10% of calorie target',
-              icon: '🎯',
-              unlockedAt: firstEntry.createdAt,
-            },
+          await upsertBadge('calorie_goal', {
+            name: 'Calorie Captain',
+            description: 'Stay within 10% of calorie target',
+            icon: '🎯',
+            unlockedAt: firstEntry.createdAt,
           })
         }
         break
@@ -131,7 +120,7 @@ export async function GET() {
     }
 
     // 5. hydrated: any day with water >= 8 glasses (2000ml = 8 * 250ml)
-    const waterLogs = await db.waterLog.findMany()
+    const waterLogs = await getAllWaterLogs()
     const waterByDate: Record<string, number> = {}
     for (const log of waterLogs) {
       waterByDate[log.date] = (waterByDate[log.date] || 0) + log.amount
@@ -139,18 +128,13 @@ export async function GET() {
     for (const [date, totalWater] of Object.entries(waterByDate)) {
       const glassCount = Math.round(totalWater / 250)
       if (glassCount >= 8) {
-        const firstLog = await db.waterLog.findFirst({ where: { date } })
+        const firstLog = await findFirstWaterLogByDate(date)
         if (firstLog) {
-          await db.badge.upsert({
-            where: { key: 'hydrated' },
-            update: { unlockedAt: firstLog.createdAt },
-            create: {
-              key: 'hydrated',
-              name: 'Hydration Hero',
-              description: 'Drink 8 glasses of water in a day',
-              icon: '💧',
-              unlockedAt: firstLog.createdAt,
-            },
+          await upsertBadge('hydrated', {
+            name: 'Hydration Hero',
+            description: 'Drink 8 glasses of water in a day',
+            icon: '💧',
+            unlockedAt: firstLog.createdAt,
           })
         }
         break
@@ -160,25 +144,20 @@ export async function GET() {
     // 6. meal_planner: locked for now (just return status - feature not implemented)
 
     // 7. voice_logger: any entry with source "voice"
-    const hasVoiceEntry = await db.foodEntry.findFirst({ where: { source: 'voice' } })
+    const hasVoiceEntry = await findFirstEntryBySource('voice')
     if (hasVoiceEntry) {
-      await db.badge.upsert({
-        where: { key: 'voice_logger' },
-        update: { unlockedAt: hasVoiceEntry.createdAt },
-        create: {
-          key: 'voice_logger',
-          name: 'Voice Logger',
-          description: 'Log food using voice input',
-          icon: '🎤',
-          unlockedAt: hasVoiceEntry.createdAt,
-        },
+      await upsertBadge('voice_logger', {
+        name: 'Voice Logger',
+        description: 'Log food using voice input',
+        icon: '🎤',
+        unlockedAt: hasVoiceEntry.createdAt,
       })
     }
 
     // 8. social: always locked (sharing feature not implemented)
 
     // Fetch all badges with their current state
-    const badges = await db.badge.findMany({ orderBy: { key: 'asc' } })
+    const badges = await getAllBadges()
 
     const badgeList = badges.map((badge) => ({
       id: badge.id,

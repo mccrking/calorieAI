@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { db } from '@/lib/db'
+import { getEntriesByDateRange } from '@/lib/database'
 
 export async function GET(request: NextRequest) {
   try {
@@ -16,12 +16,7 @@ export async function GET(request: NextRequest) {
     const endStr = endDate.toISOString().split('T')[0]
 
     // Fetch all entries in range
-    const entries = await db.foodEntry.findMany({
-      where: {
-        date: { gte: startStr, lte: endStr },
-      },
-      orderBy: { date: 'asc' },
-    })
+    const entries = await getEntriesByDateRange(startStr, endStr)
 
     // Build daily map with zero-filled entries for each day
     const dailyMap: Record<

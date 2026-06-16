@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { db } from '@/lib/db'
+import { getGoalByDate, upsertGoal, createGoalIfNotExists } from '@/lib/database'
 
 export async function GET(request: NextRequest) {
   try {
@@ -13,21 +13,11 @@ export async function GET(request: NextRequest) {
       )
     }
 
-    let goal = await db.dailyGoal.findUnique({
-      where: { date },
-    })
+    let goal = await getGoalByDate(date)
 
     // If no goal for this date, create default
     if (!goal) {
-      goal = await db.dailyGoal.create({
-        data: {
-          date,
-          calorieTarget: 2000,
-          proteinTarget: 150,
-          carbTarget: 250,
-          fatTarget: 65,
-        },
-      })
+      goal = await createGoalIfNotExists(date)
     }
 
     return NextResponse.json({ success: true, data: goal })
@@ -52,21 +42,11 @@ export async function PUT(request: NextRequest) {
       )
     }
 
-    const goal = await db.dailyGoal.upsert({
-      where: { date },
-      update: {
-        ...(calorieTarget !== undefined && { calorieTarget: Number(calorieTarget) }),
-        ...(proteinTarget !== undefined && { proteinTarget: Number(proteinTarget) }),
-        ...(carbTarget !== undefined && { carbTarget: Number(carbTarget) }),
-        ...(fatTarget !== undefined && { fatTarget: Number(fatTarget) }),
-      },
-      create: {
-        date,
-        calorieTarget: Number(calorieTarget) || 2000,
-        proteinTarget: Number(proteinTarget) || 150,
-        carbTarget: Number(carbTarget) || 250,
-        fatTarget: Number(fatTarget) || 65,
-      },
+    const goal = await upsertGoal(date, {
+      ...(calorieTarget !== undefined && { calorieTarget: Number(calorieTarget) }),
+      ...(proteinTarget !== undefined && { proteinTarget: Number(proteinTarget) }),
+      ...(carbTarget !== undefined && { carbTarget: Number(carbTarget) }),
+      ...(fatTarget !== undefined && { fatTarget: Number(fatTarget) }),
     })
 
     return NextResponse.json({ success: true, data: goal })

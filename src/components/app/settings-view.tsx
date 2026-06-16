@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import { motion } from 'framer-motion'
-import { Settings, Target, Save, Loader2, RotateCcw } from 'lucide-react'
+import { Settings, Target, Save, Loader2, RotateCcw, Database } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Card, CardContent } from '@/components/ui/card'
@@ -23,10 +23,18 @@ export function SettingsView() {
   const { toast } = useToast()
   const [saving, setSaving] = useState(false)
   const [localGoals, setLocalGoals] = useState({ ...goals })
+  const [dbMode, setDbMode] = useState<string>('')
 
   useEffect(() => {
     setLocalGoals({ ...goals })
   }, [goals])
+
+  useEffect(() => {
+    fetch('/api/db-mode')
+      .then((r) => r.json())
+      .then((d) => { if (d.success) setDbMode(d.data.label) })
+      .catch(() => {})
+  }, [])
 
   const handlePreset = (preset: typeof presets[0]) => {
     setLocalGoals({
@@ -222,6 +230,15 @@ export function SettingsView() {
           Save Goals
         </Button>
       </div>
+
+      {/* Database Mode */}
+      {dbMode && (
+        <div className="flex items-center gap-2 px-3 py-2 rounded-lg bg-muted/50 border border-border/30">
+          <Database className="w-3.5 h-3.5 text-primary" />
+          <span className="text-[11px] text-muted-foreground">Database:</span>
+          <span className={`text-[11px] font-semibold ${dbMode.includes('Supabase') ? 'text-emerald-600' : 'text-amber-600'}`}>{dbMode}</span>
+        </div>
+      )}
 
       {/* Info Card */}
       <div className="bg-primary/5 rounded-xl p-4 border border-primary/10">

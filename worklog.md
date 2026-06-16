@@ -46,3 +46,27 @@ Stage Summary:
 - Service worker caches static assets and API responses for offline use
 - Install prompt banner appears automatically on supported browsers
 - All existing features remain fully functional
+
+---
+Task ID: 8
+Agent: Main Agent
+Task: Add Supabase data management with dual-mode (SQLite fallback)
+
+Work Log:
+- Installed @supabase/supabase-js@2.108.2
+- Created src/lib/supabase.ts - Server-side Supabase client with auto-detection
+- Created supabase/migration.sql - Full SQL migration with 6 tables, indexes, RLS, triggers, and badge seeding
+- Created src/lib/database.ts - Comprehensive data abstraction layer (450+ lines) with 25+ functions covering all CRUD operations for FoodEntry, DailyGoal, UserProfile, WaterLog, Badge, ChatMessage
+- Updated 9 API routes to use the new abstraction layer: entries, entries/[id], goals, stats, analytics, water, badges, chat, profile
+- Created .env.example with Supabase configuration guide
+- Created /api/db-mode endpoint to expose current database mode
+- Added DB mode indicator in Settings view (amber for SQLite, emerald for Supabase)
+- Ran lint: 0 errors
+- Verified all APIs return 200 with correct data (entries, goals, badges, profile, water, db-mode)
+- Browser verified: app loads, all tabs work, DB indicator shows "SQLite (Local)", no console errors
+
+Stage Summary:
+- Architecture: Dual-mode database - automatically detects NEXT_PUBLIC_SUPABASE_URL to switch between Supabase PostgreSQL and Prisma SQLite
+- Files created: src/lib/supabase.ts, src/lib/database.ts, supabase/migration.sql, .env.example, src/app/api/db-mode/route.ts
+- Files modified: 9 API routes, settings-view.tsx
+- To switch to Supabase: run migration.sql in Supabase SQL Editor, add env vars, restart app

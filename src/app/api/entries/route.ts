@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { db } from '@/lib/db'
+import { getEntriesByDate, createEntry } from '@/lib/database'
 
 export async function GET(request: NextRequest) {
   try {
@@ -13,10 +13,7 @@ export async function GET(request: NextRequest) {
       )
     }
 
-    const entries = await db.foodEntry.findMany({
-      where: { date },
-      orderBy: { createdAt: 'desc' },
-    })
+    const entries = await getEntriesByDate(date)
 
     return NextResponse.json({ success: true, data: entries })
   } catch (error: unknown) {
@@ -40,20 +37,18 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    const entry = await db.foodEntry.create({
-      data: {
-        name,
-        calories: Math.round(Number(calories)),
-        protein: Number(protein) || 0,
-        carbs: Number(carbs) || 0,
-        fat: Number(fat) || 0,
-        fiber: Number(fiber) || 0,
-        serving: serving || null,
-        mealType: mealType || 'snack',
-        imageUrl: imageUrl || null,
-        source: source || 'text',
-        date,
-      },
+    const entry = await createEntry({
+      name,
+      calories: Math.round(Number(calories)),
+      protein: Number(protein) || 0,
+      carbs: Number(carbs) || 0,
+      fat: Number(fat) || 0,
+      fiber: Number(fiber) || 0,
+      serving: serving || null,
+      mealType: mealType || 'snack',
+      imageUrl: imageUrl || null,
+      source: source || 'text',
+      date,
     })
 
     return NextResponse.json({ success: true, data: entry })

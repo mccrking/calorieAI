@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { db } from '@/lib/db'
+import { deleteEntry } from '@/lib/database'
 
 export async function DELETE(
   request: NextRequest,
@@ -8,9 +8,7 @@ export async function DELETE(
   try {
     const { id } = await params
 
-    await db.foodEntry.delete({
-      where: { id },
-    })
+    await deleteEntry(id)
 
     return NextResponse.json({ success: true })
   } catch (error: unknown) {

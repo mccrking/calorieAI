@@ -1,6 +1,13 @@
 import { NextRequest, NextResponse } from 'next/server'
 import ZAI from 'z-ai-web-dev-sdk'
-import { db } from '@/lib/db'
+import {
+  getEntriesByDate,
+  getGoalByDate,
+  createChatMessage,
+  getChatMessageCount,
+  getOldestChatMessages,
+  deleteChatMessagesByIds,
+} from '@/lib/database'
 
 export async function POST(request: NextRequest) {
   try {
@@ -15,9 +22,7 @@ export async function POST(request: NextRequest) {
 
     // Get today's entries for context
     const todayStr = new Date().toISOString().split('T')[0]
-    const todayEntries = await db.foodEntry.findMany({
-      where: { date: todayStr },
-    })
+    const todayEntries = await getEntriesByDate(todayStr)
 
     const totalCalories = todayEntries.reduce((sum, e) => sum + e.calories, 0)
     const totalProtein = Math.round(todayEntries.reduce((sum, e) => sum + e.protein, 0) * 10) / 10
@@ -25,9 +30,7 @@ export async function POST(request: NextRequest) {
     const totalFat = Math.round(todayEntries.reduce((sum, e) => sum + e.fat, 0) * 10) / 10
 
     // Get current goal
-    const goal = await db.dailyGoal.findUnique({
-      where: { date: todayStr },
-    })
+    const goal = await getGoalByDate(todayStr)
 
     const calorieTarget = goal?.calorieTarget || 2000
     const proteinTarget = goal?.proteinTarget || 150
@@ -82,22 +85,16 @@ ${contextInfo}`
     // Save messages to chat history
     const lastUserMsg = messages[messages.length - 1]
     if (lastUserMsg && lastUserMsg.role === 'user') {
-      await db.chatMessage.create({ data: { role: 'user', content: lastUserMsg.content } })
+      await createChatMessage({ role: 'user', content: lastUserMsg.content })
     }
-    await db.chatMessage.create({ data: { role: 'assistant', content } })
+    await createChatMessage({ role: 'assistant', content })
 
     // Keep only last 50 messages in history
-    const totalMessages = await db.chatMessage.count()
+    const totalMessages = await getChatMessageCount()
     if (totalMessages > 50) {
-      const oldestMessages = await db.chatMessage.findMany({
-        orderBy: { createdAt: 'asc' },
-        take: totalMessages - 50,
-        select: { id: true },
-      })
+      const oldestMessages = await getOldestChatMessages(totalMessages - 50)
       if (oldestMessages.length > 0) {
-        await db.chatMessage.deleteMany({
-          where: { id: { in: oldestMessages.map((m) => m.id) } },
-        })
+        await deleteChatMessagesByIds(oldestMessages.map((m) => m.id))
       }
     }
 

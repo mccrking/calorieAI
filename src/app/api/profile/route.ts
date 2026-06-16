@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { db } from '@/lib/db'
+import { getProfile, upsertProfile } from '@/lib/database'
 
 const ACTIVITY_MULTIPLIERS: Record<string, number> = {
   sedentary: 1.2,
@@ -27,21 +27,19 @@ function calculateTDEE(bmr: number, activity: string): number {
 
 export async function GET() {
   try {
-    let profile = await db.userProfile.findFirst()
+    let profile = await getProfile()
 
     if (!profile) {
       // Create default profile
-      profile = await db.userProfile.create({
-        data: {
-          name: 'User',
-          age: 25,
-          weight: 70,
-          height: 170,
-          gender: 'male',
-          activity: 'moderate',
-          bmr: calculateBMR(70, 170, 25, 'male'),
-          tdee: calculateTDEE(calculateBMR(70, 170, 25, 'male'), 'moderate'),
-        },
+      profile = await upsertProfile({
+        name: 'User',
+        age: 25,
+        weight: 70,
+        height: 170,
+        gender: 'male',
+        activity: 'moderate',
+        bmr: calculateBMR(70, 170, 25, 'male'),
+        tdee: calculateTDEE(calculateBMR(70, 170, 25, 'male'), 'moderate'),
       })
     }
 
@@ -73,38 +71,16 @@ export async function PUT(request: NextRequest) {
     const bmr = Math.round(calculateBMR(parsedWeight, parsedHeight, parsedAge, validGender))
     const tdee = calculateTDEE(bmr, validActivity)
 
-    // Upsert: update first profile or create new
-    const existing = await db.userProfile.findFirst()
-    let profile
-
-    if (existing) {
-      profile = await db.userProfile.update({
-        where: { id: existing.id },
-        data: {
-          name,
-          age: parsedAge,
-          weight: parsedWeight,
-          height: parsedHeight,
-          gender: validGender,
-          activity: validActivity,
-          bmr,
-          tdee,
-        },
-      })
-    } else {
-      profile = await db.userProfile.create({
-        data: {
-          name,
-          age: parsedAge,
-          weight: parsedWeight,
-          height: parsedHeight,
-          gender: validGender,
-          activity: validActivity,
-          bmr,
-          tdee,
-        },
-      })
-    }
+    const profile = await upsertProfile({
+      name,
+      age: parsedAge,
+      weight: parsedWeight,
+      height: parsedHeight,
+      gender: validGender,
+      activity: validActivity,
+      bmr,
+      tdee,
+    })
 
     return NextResponse.json({ success: true, data: profile })
   } catch (error: unknown) {

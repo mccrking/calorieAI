@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { db } from '@/lib/db'
+import { getWaterLogsByDate, createWaterLog } from '@/lib/database'
 
 export async function GET(request: NextRequest) {
   try {
@@ -13,10 +13,7 @@ export async function GET(request: NextRequest) {
       )
     }
 
-    const waterLogs = await db.waterLog.findMany({
-      where: { date },
-      orderBy: { createdAt: 'asc' },
-    })
+    const waterLogs = await getWaterLogsByDate(date)
 
     const totalAmount = waterLogs.reduce((sum, log) => sum + log.amount, 0)
     const glassCount = Math.round(totalAmount / 250) // 250ml per glass
@@ -57,18 +54,10 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    const waterLog = await db.waterLog.create({
-      data: {
-        amount: parsedAmount,
-        date,
-      },
-    })
+    const waterLog = await createWaterLog({ amount: parsedAmount, date })
 
     // Recalculate totals after adding
-    const waterLogs = await db.waterLog.findMany({
-      where: { date },
-      orderBy: { createdAt: 'asc' },
-    })
+    const waterLogs = await getWaterLogsByDate(date)
 
     const totalAmount = waterLogs.reduce((sum, log) => sum + log.amount, 0)
     const glassCount = Math.round(totalAmount / 250)
