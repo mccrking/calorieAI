@@ -27,15 +27,15 @@ export const metadata: Metadata = {
     "health",
   ],
   icons: {
-    icon: "/icon-512.png",
-    apple: "/icon-512.png",
+    icon: "/icon-1024.png",
+    apple: "/icon-1024.png",
   },
   manifest: "/manifest.json",
   appleWebApp: {
     capable: true,
     statusBarStyle: "default",
     title: "CalorieAI",
-    startupImage: "/icon-512.png",
+    startupImage: "/icon-1024.png",
   },
   openGraph: {
     title: "CalorieAI - Smart Food Calorie Tracker",
@@ -64,7 +64,7 @@ export default function RootLayout({
     <html lang="en" suppressHydrationWarning>
       <head>
         <link rel="manifest" href="/manifest.json" />
-        <link rel="apple-touch-icon" href="/icon-512.png" />
+        <link rel="apple-touch-icon" href="/icon-1024.png" />
         <meta name="apple-mobile-web-app-capable" content="yes" />
         <meta
           name="apple-mobile-web-app-status-bar-style"

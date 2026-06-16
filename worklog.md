@@ -96,3 +96,32 @@ Stage Summary:
 - Files created: src/lib/openai-client.ts, src/lib/ai.ts
 - Files modified: analyze-text/route.ts, analyze-image/route.ts, chat/route.ts, meal-plan/route.ts, db-mode/route.ts, settings-view.tsx, .env.example
 - To switch to OpenAI: add OPENAI_API_KEY=sk-... to .env, restart app
+
+---
+Task ID: 10
+Agent: Main Agent
+Task: Complete PWA transformation (manifest, service worker, icon, install prompt)
+
+Work Log:
+- Generated AI app icon (1024x1024, green emerald leaf+flame design) using z-ai image generation
+- Created/updated public/manifest.json with: name, short_name, standalone display, theme_color #059669, 4 icon entries (any + maskable)
+- Created/updated public/sw.js service worker with: install/activate lifecycle, network-first for API, cache-first for static assets, offline fallback navigation
+- Fixed icon paths in layout.tsx from /icon-512.png to /icon-1024.png (3 locations)
+- Verified PWAInstallPrompt component already existed with: beforeinstallprompt listener, install/dismiss buttons, offline banner
+- Verified service worker registration in use-pwa.tsx hook
+- Lint: 0 errors
+- Browser verified ALL PWA checks:
+  - manifest link: ✅
+  - apple-touch-icon: ✅ (correct path)
+  - apple-mobile-web-app-capable: ✅
+  - apple-mobile-web-app-status-bar-style: ✅
+  - theme-color meta: ✅
+  - manifest.json loads: ✅ (name, display:standalone, 4 icons, theme_color)
+  - Service worker: ✅ (registered, scope=/, state=activated)
+  - Icon accessible: ✅ (200, image/png)
+  - Zero console errors: ✅
+
+Stage Summary:
+- PWA is fully functional: installable, standalone mode, offline caching, iOS meta tags
+- When user opens on phone: "Install" banner appears → tap → app installs on home screen
+- On iPhone: Share → "Add to Home Screen" → launches as standalone app
