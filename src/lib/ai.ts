@@ -1,17 +1,15 @@
 /**
  * CalorieAI - AI Abstraction Layer
- * 
+ *
  * Automatically switches between OpenAI and z-ai-web-dev-sdk based on env:
  *   - If OPENAI_API_KEY is set → OpenAI (GPT-4o-mini)
  *   - Otherwise → z-ai-web-dev-sdk (sandbox only)
+ *
+ * z-ai-web-dev-sdk is imported DYNAMICALLY to avoid crashing on Vercel
+ * where the sandbox SDK is not available.
  */
 
-import ZAI from 'z-ai-web-dev-sdk'
 import { openai, isOpenAIConfigured, getAIModel, getVisionModel } from '@/lib/openai-client'
-
-// ============================================
-// Helper: Clean AI response (remove markdown code blocks)
-// ============================================
 
 function cleanJsonResponse(content: string): string {
   return content.replace(/```json\n?/g, '').replace(/```\n?/g, '').trim()
@@ -26,9 +24,10 @@ function parseJsonResponse(content: string): unknown {
   }
 }
 
-// ============================================
-// 1. Analyze Food from Text Description
-// ============================================
+async function getZAI() {
+  const ZAI = (await import('z-ai-web-dev-sdk')).default
+  return ZAI.create()
+}
 
 const FOOD_ANALYSIS_SYSTEM_PROMPT = `You are a professional nutritionist AI assistant. Your job is to analyze food descriptions and provide accurate nutritional estimates.
 
@@ -66,8 +65,7 @@ export async function analyzeFoodText(text: string): Promise<unknown> {
     return parseJsonResponse(content)
   }
 
-  // Fallback: z-ai-web-dev-sdk
-  const zai = await ZAI.create()
+  const zai = await getZAI()
   const response = await zai.chat.completions.create({
     messages: [
       { role: 'assistant', content: FOOD_ANALYSIS_SYSTEM_PROMPT },
@@ -79,10 +77,6 @@ export async function analyzeFoodText(text: string): Promise<unknown> {
   if (!content) throw new Error('No response from AI')
   return parseJsonResponse(content)
 }
-
-// ============================================
-// 2. Analyze Food from Image
-// ============================================
 
 const IMAGE_ANALYSIS_PROMPT = `You are a professional nutritionist AI. Analyze this food image and estimate its nutritional content.
 
@@ -130,8 +124,7 @@ export async function analyzeFoodImage(base64Image: string, mimeType: string): P
     return parseJsonResponse(content)
   }
 
-  // Fallback: z-ai-web-dev-sdk
-  const zai = await ZAI.create()
+  const zai = await getZAI()
   const response = await zai.chat.completions.createVision({
     messages: [
       {
@@ -152,10 +145,6 @@ export async function analyzeFoodImage(base64Image: string, mimeType: string): P
   return parseJsonResponse(content)
 }
 
-// ============================================
-// 3. Chat Completion (Nutrition Assistant)
-// ============================================
-
 export async function chatCompletion(
   messages: Array<{ role: string; content: string }>,
   systemPrompt: string
@@ -174,8 +163,7 @@ export async function chatCompletion(
     return content
   }
 
-  // Fallback: z-ai-web-dev-sdk
-  const zai = await ZAI.create()
+  const zai = await getZAI()
   const response = await zai.chat.completions.create({
     messages: [
       { role: 'assistant', content: systemPrompt },
@@ -187,10 +175,6 @@ export async function chatCompletion(
   if (!content) throw new Error('No response from AI')
   return content
 }
-
-// ============================================
-// 4. Generate Meal Plan (JSON output)
-// ============================================
 
 export async function generateMealPlan(
   systemPrompt: string,
@@ -211,8 +195,7 @@ export async function generateMealPlan(
     return parseJsonResponse(content)
   }
 
-  // Fallback: z-ai-web-dev-sdk
-  const zai = await ZAI.create()
+  const zai = await getZAI()
   const response = await zai.chat.completions.create({
     messages: [
       { role: 'assistant', content: systemPrompt },
@@ -224,10 +207,6 @@ export async function generateMealPlan(
   if (!content) throw new Error('No response from AI')
   return parseJsonResponse(content)
 }
-
-// ============================================
-// Utility: Which AI provider is active?
-// ============================================
 
 export function getAIProvider(): 'openai' | 'z-ai-sdk' {
   return isOpenAIConfigured ? 'openai' : 'z-ai-sdk'
