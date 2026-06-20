@@ -45,7 +45,6 @@ local-*
 dev.log
 dev.out.log
 test
-prompt
 
 server.log
 # Skills directory
